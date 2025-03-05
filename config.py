@@ -24,5 +24,11 @@ def get_config():
     parser.add_argument("--model_path", type=str, help="Model path for generation mode")
     parser.add_argument("--num_images", type=int, default=16, help="Number of images to generate")
     
-    parser.set_defaults(fp16=True)
+    # 时间嵌入维度
+    parser.add_argument("--time_emb_dim", type=int, default=128, help="Dimension of time embeddings")
+    
+    # deepspeed 自动添加的参数
+    parser.add_argument("--local_rank", type=int, default=-1, help="Local rank passed from deepspeed")
+    
+    # parser.set_defaults(fp16=True)
     return parser.parse_args()
