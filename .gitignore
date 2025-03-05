@@ -1,3 +1,4 @@
 checkpoints/
 samples*/
 *.log
+__pycache__/
