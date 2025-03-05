@@ -1,4 +1,5 @@
-checkpoints/
-samples*/
-*.log
 __pycache__/
+checkpoints*/
+samples*/
+logs*/
+*.log

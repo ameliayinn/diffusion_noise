@@ -76,39 +76,39 @@ class UpBlock(nn.Module):
         return h
 
 class UNet(nn.Module):
-    def __init__(self, time_emb_dim=128):
+    def __init__(self, time_emb_dim=128, image_size=64):
         super().__init__()
-        # 时间嵌入处理（64 -> time_emb_dim）
+        # 时间嵌入处理（image_size -> time_emb_dim）
         self.time_embed = nn.Sequential(
-            SinusoidalPositionEmbeddings(64),
-            nn.Linear(64, time_emb_dim),
+            SinusoidalPositionEmbeddings(image_size),
+            nn.Linear(image_size, time_emb_dim),
             nn.GELU(),
             nn.Linear(time_emb_dim, time_emb_dim),
         )
         
         # 下采样路径
-        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
-        self.down1 = DownBlock(64, 128, time_emb_dim=time_emb_dim)
-        self.down2 = DownBlock(128, 256, time_emb_dim=time_emb_dim)
-        self.down3 = DownBlock(256, 512, time_emb_dim=time_emb_dim)
+        self.conv1 = nn.Conv2d(3, image_size, 3, padding=1)
+        self.down1 = DownBlock(image_size, image_size * 2, time_emb_dim=time_emb_dim)
+        self.down2 = DownBlock(image_size * 2, image_size * 4, time_emb_dim=time_emb_dim)
+        self.down3 = DownBlock(image_size * 4, image_size * 8, time_emb_dim=time_emb_dim)
         
         # 中间层（带时间嵌入）
-        self.mid_conv1 = nn.Conv2d(512, 512, 3, padding=1)
-        self.mid_norm = nn.GroupNorm(8, 512)
-        self.mid_time_proj = nn.Linear(time_emb_dim, 512 * 2)
+        self.mid_conv1 = nn.Conv2d(image_size * 8, image_size * 8, 3, padding=1)
+        self.mid_norm = nn.GroupNorm(8, image_size * 8)
+        self.mid_time_proj = nn.Linear(time_emb_dim, image_size * 8 * 2)
         self.mid_act = nn.GELU()
         
         # 上采样路径
-        self.up1 = UpBlock(512, 256, time_emb_dim=time_emb_dim)
-        self.up2 = UpBlock(256, 128, time_emb_dim=time_emb_dim)
-        self.up3 = UpBlock(128, 64, time_emb_dim=time_emb_dim)
+        self.up1 = UpBlock(image_size * 8, image_size * 4, time_emb_dim=time_emb_dim)
+        self.up2 = UpBlock(image_size * 4, image_size * 2, time_emb_dim=time_emb_dim)
+        self.up3 = UpBlock(image_size * 2, image_size, time_emb_dim=time_emb_dim)
         
         # 最终输出层
         self.final_conv = nn.Sequential(
-            nn.Conv2d(64, 64, 3, padding=1),
-            nn.GroupNorm(8, 64),
+            nn.Conv2d(image_size, image_size, 3, padding=1),
+            nn.GroupNorm(8, image_size),
             nn.GELU(),
-            nn.Conv2d(64, 3, 1),
+            nn.Conv2d(image_size, 3, 1),
         )
 
     def forward(self, x, t):

@@ -11,6 +11,8 @@ from diffusion import linear_beta_schedule, forward_diffusion
 from unet import UNet
 import torchvision
 import matplotlib.pyplot as plt
+import pandas as pd
+import datetime
 
 @torch.no_grad()
 def generate_during_training(model_engine, save_dir, config, num_images=16):
@@ -63,8 +65,25 @@ def generate_during_training(model_engine, save_dir, config, num_images=16):
 
 def train_deepspeed(config):
     """DeepSpeed训练主函数"""
+    
+    # 生成时间戳
+    timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
+
+    # 创建带时间戳的 checkpoints, sample 和 logs 文件夹
+    config.checkpoints_dirs = os.path.join(config.checkpoints_dir, f"checkpoints_{timestamp}")
+    config.samples_dir = os.path.join(config.samples_dir, f"samples_{timestamp}")
+    config.logs_dir = os.path.join(config.logs_dir, f"logs_{timestamp}")
+
+    os.makedirs(config.checkpoints_dir, exist_ok=True)
+    os.makedirs(config.samples_dir, exist_ok=True)
+    os.makedirs(config.logs_dir, exist_ok=True)
+    
+    # 构造 CSV 文件路径
+    csv_filename = f"is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}.csv"
+    csv_filepath = os.path.join(config.logs_dir, csv_filename)
+    
     # 初始化模型
-    model = UNet(time_emb_dim=config.time_emb_dim)
+    model = UNet(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     
     # DeepSpeed配置 (移除scheduler部分)
@@ -121,6 +140,14 @@ def train_deepspeed(config):
     sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
     sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
     
+    # 提示开始
+    print(f"****START TRAINING****\nimage_size: {config.image_size}, batch_size: {config.batch_size}, timesteps: {config.timesteps}, time_emb_dim: {config.time_emb_dim}")
+    
+    # 创建 CSV 文件并写入表头
+    if model_engine.local_rank == 0:  # 只在主进程创建
+        df = pd.DataFrame(columns=["epoch", "loss", "image_size", "batch_size", "timesteps", "time_emb_dim", "learning_rate"])
+        df.to_csv(csv_filepath, index=False)
+    
     # 训练循环
     for epoch in range(config.num_epochs):
         model_engine.train()
@@ -156,18 +183,34 @@ def train_deepspeed(config):
         # 保存检查点
         if model_engine.local_rank == 0:
             print(f"Current lr: {scheduler.get_last_lr()[0]:.8f}")  # 验证学习率变化
-            os.makedirs(config.checkpoint_dir, exist_ok=True)
+            
+            # 记录 epoch 结果到 CSV
+            new_row = {
+                "epoch": epoch + 1,
+                "loss": loss.item(),
+                "image_size": config.image_size,
+                "batch_size": config.batch_size,
+                "timesteps": config.timesteps,
+                "time_emb_dim": config.time_emb_dim,
+                "learning_rate": scheduler.get_last_lr()[0]
+            }
+            df = pd.read_csv(csv_filepath)
+            df = df.append(new_row, ignore_index=True)
+            df.to_csv(csv_filepath, index=False)
+            
+            # 保存模型检查点
             model_path = os.path.join(
-                config.checkpoint_dir,
-                f"model_bs_{config.batch_size}_ts_{config.timesteps}_epoch_{epoch+1}.pt"
+                config.checkpoints_dir,
+                f"model_is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}_epoch_{epoch+1}.pt"
             )
             torch.save(model_engine.module.state_dict(), model_path)
             
+            # 生成样本
             sample_dir = os.path.join(
                 config.samples_dir,
-                f"bs_{config.batch_size}_ts_{config.timesteps}_epoch_{epoch+1}"
+                f"is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}_epoch_{epoch+1}"
             )
             os.makedirs(sample_dir, exist_ok=True)
             generate_during_training(model_engine, sample_dir, config, num_images=16)
             
-            print(f"Epoch {epoch+1} | Loss: {loss.item():.4f} | Samples saved to {sample_dir}")
+            # print(f"Epoch {epoch+1} | Loss: {loss.item():.4f} | Samples saved to {sample_dir}")

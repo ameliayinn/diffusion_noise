@@ -13,7 +13,8 @@ def get_config():
     
     # 路径参数
     parser.add_argument("--samples_dir", type=str, default="./samples", help="Directory to save samples")
-    parser.add_argument("--checkpoint_dir", type=str, default="./checkpoints", help="Directory to save checkpoints")
+    parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints", help="Directory to save checkpoints")
+    parser.add_argument("--logs_dir", type=str, default="./logs", help="Directory to save logs")
     
     # 精度设置
     parser.add_argument("--fp16", action="store_true", help="Enable mixed precision training (default: True)")
