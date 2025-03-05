@@ -195,7 +195,7 @@ def train_deepspeed(config):
                 "learning_rate": scheduler.get_last_lr()[0]
             }
             df = pd.read_csv(csv_filepath)
-            df = df.append(new_row, ignore_index=True)
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True) # 使用 pd.concat 追加数据
             df.to_csv(csv_filepath, index=False)
             
             # 保存模型检查点
