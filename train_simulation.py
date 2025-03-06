@@ -6,9 +6,9 @@ from torch.optim.lr_scheduler import MultiStepLR
 import torch.nn.functional as F
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
-from data_loader import load_data
+from dataloader_simulation import load_data
 from diffusion import linear_beta_schedule, forward_diffusion
-from unet import UNet
+from unet import UNetSimulation
 import torchvision
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -73,17 +73,9 @@ def train_deepspeed(config):
     config.checkpoints_dir = os.path.join(config.checkpoints_dir, f"checkpoints_{timestamp}")
     config.samples_dir = os.path.join(config.samples_dir, f"samples_{timestamp}")
     config.logs_dir = os.path.join(config.logs_dir, f"logs_{timestamp}")
-
-    os.makedirs(config.checkpoints_dir, exist_ok=True)
-    os.makedirs(config.samples_dir, exist_ok=True)
-    os.makedirs(config.logs_dir, exist_ok=True)
-    
-    # 构造 CSV 文件路径
-    csv_filename = f"is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}.csv"
-    csv_filepath = os.path.join(config.logs_dir, csv_filename)
     
     # 初始化模型
-    model = UNet(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
+    model = UNetSimulation(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     
     # DeepSpeed配置 (移除scheduler部分)
@@ -113,7 +105,8 @@ def train_deepspeed(config):
     
     # 初始化引擎
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
-    train_dataset = load_data(config, local_rank)
+    train_dataset = load_data(config, local_rank, seed=42) # 使用固定种子
+    # train_dataset_random = load_data(config, local_rank=0, seed=None)  # 不使用固定种子
     
     # 初始化DeepSpeed引擎
     model_engine, optimizer, train_loader, _ = deepspeed.initialize(
@@ -129,8 +122,7 @@ def train_deepspeed(config):
     base_optimizer = optimizer.optimizer  # 访问底层PyTorch优化器
     scheduler = MultiStepLR(
         base_optimizer, 
-        # milestones=[500, 1000, 1500],  # 在epoch=500、1000、1500时衰减
-        milestones=[300, 600, 900],
+        milestones=[500, 1000, 1500],  # 在epoch=500、1000、1500时衰减
         gamma=0.1  # 每次衰减为之前的0.1倍
     )
     
@@ -143,6 +135,15 @@ def train_deepspeed(config):
     
     # 提示开始
     print(f"****START TRAINING****\nimage_size: {config.image_size}, batch_size: {config.batch_size}, timesteps: {config.timesteps}, time_emb_dim: {config.time_emb_dim}")
+    
+    # 创建带有时间戳的路径
+    os.makedirs(config.checkpoints_dir, exist_ok=True)
+    os.makedirs(config.samples_dir, exist_ok=True)
+    os.makedirs(config.logs_dir, exist_ok=True)
+    
+    # 构造 CSV 文件路径
+    csv_filename = f"is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}.csv"
+    csv_filepath = os.path.join(config.logs_dir, csv_filename)
     
     # 创建 CSV 文件并写入表头
     if model_engine.local_rank == 0:  # 只在主进程创建
