@@ -70,7 +70,7 @@ def train_deepspeed(config):
     timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
 
     # 创建带时间戳的 checkpoints, sample 和 logs 文件夹
-    config.checkpoints_dirs = os.path.join(config.checkpoints_dir, f"checkpoints_{timestamp}")
+    config.checkpoints_dir = os.path.join(config.checkpoints_dir, f"checkpoints_{timestamp}")
     config.samples_dir = os.path.join(config.samples_dir, f"samples_{timestamp}")
     config.logs_dir = os.path.join(config.logs_dir, f"logs_{timestamp}")
 
