@@ -26,3 +26,30 @@ def forward_diffusion(x0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod)
     sqrt_alpha_cumprod_t = sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
     sqrt_one_minus_alpha_cumprod_t = sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
     return sqrt_alpha_cumprod_t * x0 + sqrt_one_minus_alpha_cumprod_t * noise, noise
+
+def forward_diffusion_with_different_noise(x0_1, x0_2, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod):
+    """
+    对两份数据分别进行加噪
+    Args:
+        x0_1: 第一份数据 [B, C, H, W]
+        x0_2: 第二份数据 [B, C, H, W]
+        t: 时间步 [B]
+        sqrt_alphas_cumprod: 累积 alpha 的平方根 [T]
+        sqrt_one_minus_alphas_cumprod: 1 - 累积 alpha 的平方根 [T]
+    Returns:
+        noisy_x1: 加噪后的第一份数据
+        noisy_x2: 加噪后的第二份数据
+        noise1: 第一份数据的噪声
+        noise2: 第二份数据的噪声
+    """
+    noise1 = torch.randn_like(x0_1)
+    noise2 = torch.randn_like(x0_2)
+    
+    # 计算加噪后的数据
+    sqrt_alpha_cumprod_t = sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+    sqrt_one_minus_alpha_cumprod_t = sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+    
+    noisy_x1 = sqrt_alpha_cumprod_t * x0_1 + sqrt_one_minus_alpha_cumprod_t * noise1
+    noisy_x2 = sqrt_alpha_cumprod_t * x0_2 + sqrt_one_minus_alpha_cumprod_t * noise2
+    
+    return noisy_x1, noisy_x2, noise1, noise2

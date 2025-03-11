@@ -28,8 +28,19 @@ def get_config():
     # 时间嵌入维度
     parser.add_argument("--time_emb_dim", type=int, default=128, help="Dimension of time embeddings")
     
+    # simulation数据正态分布
+    parser.add_argument("--mu1", type=int, default=2, help="Mu value of the first normal distribution")
+    parser.add_argument("--sigma1", type=int, default=2, help="Sigma value of the first normal distribution")
+    parser.add_argument("--num1", type=int, default=2, help="Number of data of the first normal distribution")
+    parser.add_argument("--mu2", type=int, default=2, help="Mu value of the second normal distribution")
+    parser.add_argument("--sigma2", type=int, default=2, help="Sigma value of the second normal distribution")
+    parser.add_argument("--num2", type=int, default=2, help="Number of data of the second normal distribution")
+    
     # deepspeed 自动添加的参数
     parser.add_argument("--local_rank", type=int, default=-1, help="Local rank passed from deepspeed")
+    
+    # use different noise
+    parser.add_argument("--use_different_noise", type=bool, default=False, help="Use different noise for diffusion or not")
     
     # parser.set_defaults(fp16=True)
     return parser.parse_args()

@@ -122,7 +122,12 @@ class UNet(nn.Module):
         x2 = self.down1(x1, t_embed)
         x3 = self.down2(x2, t_embed)
         x = self.down3(x3, t_embed)
-        
+        '''
+        print(f"x1 shape: {x1.shape}")
+        print(f"x2 shape: {x2.shape}")
+        print(f"x3 shape: {x3.shape}")
+        print(f"x shape before up1: {x.shape}")
+        '''
         # 中间处理
         x = self.mid_conv1(x)
         # 应用时间嵌入
@@ -185,6 +190,14 @@ class UNetSimulation(nn.Module):
         x2 = self.down1(x1, t_embed)
         x3 = self.down2(x2, t_embed)
         x = self.down3(x3, t_embed)
+        
+        '''
+        print(f"x1 shape: {x1.shape}")
+        print(f"x2 shape: {x2.shape}")
+        print(f"x3 shape: {x3.shape}")
+        print(f"x shape before up1: {x.shape}")
+        
+        '''
         
         # 中间处理
         x = self.mid_conv1(x)

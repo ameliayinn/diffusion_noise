@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from diffusion import linear_beta_schedule, forward_diffusion
+from diffusion import linear_beta_schedule, forward_diffusion_with_different_noise as forward_diffusion
 from unet import UNetSimulation
 import torchvision
 import matplotlib.pyplot as plt
@@ -21,11 +21,11 @@ def train_deepspeed(config):
     """函数引用"""
     def get_function(type):
         if type == 'simulation':
-            from utils.dataloader import load_data_simulation as load_data
-            from generate import generate_during_training_simulation as generate_during_training
+            from utils.dataloader_with_different_noise import load_data_simulation as load_data
+            from generate_with_different_noise import generate_during_training_simulation as generate_during_training
         else:
-            from utils.dataloader import load_data
-            from generate import generate_during_training
+            from utils.dataloader_with_different_noise import load_data
+            from generate_with_different_noise import generate_during_training
         return load_data, generate_during_training
     
     """DeepSpeed训练主函数"""
@@ -39,8 +39,8 @@ def train_deepspeed(config):
     config.logs_dir = os.path.join(config.logs_dir, f"logs_{timestamp}")
     
     # 初始化模型
-    model = UNetSimulation(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
-    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    model1 = UNetSimulation(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
+    model2 = UNetSimulation(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
     
     # DeepSpeed配置 (移除scheduler部分)
     ds_config = {
@@ -78,8 +78,10 @@ def train_deepspeed(config):
     # train_dataset_random = load_data(config, local_rank=0, seed=None)  # 不使用固定种子
     
     # 初始化DeepSpeed引擎
+    # parameters = filter(lambda p: p.requires_grad, model.parameters())
+    parameters = list(model1.parameters()) + list(model2.parameters())  # 合并参数
     model_engine, optimizer, train_loader, _ = deepspeed.initialize(
-        model=model,
+        model=[model1, model2],  # 传入两个模型
         model_parameters=parameters,
         config_params=ds_config,
         training_data=train_dataset,
@@ -129,25 +131,30 @@ def train_deepspeed(config):
                 train_loader.batch_sampler.sampler.set_epoch(epoch)
         
         for batch in tqdm(train_loader):
-            images = batch["image"].to(model_engine.device)
+            images1 = batch["image1"].to(model_engine.device)  # 第一份数据
+            images2 = batch["image2"].to(model_engine.device)  # 第二份数据
             # images = images.unsqueeze(1)  # 增加通道维度，形状变为 [batch_size, 1, 10, 10]
-            images = images.to(torch.float16)
+            images1 = images1.to(torch.float16)
+            images2 = images2.to(torch.float16)
             # print(type(images))  # 应该是 <class 'torch.Tensor'>
             # print(images.shape)  # 应该是 [B, 1, H, W]
-            t = torch.randint(0, config.timesteps, (images.size(0),)).to(model_engine.device)
+            t = torch.randint(0, config.timesteps, (images1.size(0),)).to(model_engine.device)
             
             # 前向扩散
-            noisy_images, noise = forward_diffusion(
-                images, t,
+            noisy_images1, noisy_images2, noise1, noise2 = forward_diffusion(
+                images1, images2, t,
                 sqrt_alphas_cumprod,
                 sqrt_one_minus_alphas_cumprod
             )
             
             # 预测噪声
-            pred_noise = model_engine(noisy_images, t)
+            pred_noise1 = model_engine.module[0](noisy_images1, t)  # 使用第一个 UNet
+            pred_noise2 = model_engine.module[1](noisy_images2, t)  # 使用第二个 UNet
             
             # 计算损失
-            loss = F.mse_loss(pred_noise, noise)
+            loss1 = F.mse_loss(pred_noise1, noise1)
+            loss2 = F.mse_loss(pred_noise2, noise2)
+            loss = loss1 + loss2  # 合并损失
             
             # 反向传播
             model_engine.backward(loss)

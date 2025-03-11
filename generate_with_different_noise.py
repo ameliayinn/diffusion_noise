@@ -7,6 +7,8 @@ from diffusion import linear_beta_schedule
 import os
 import numpy as np
 
+'''
+# 还未更改
 @torch.no_grad()
 def generate_samples(config, model_path, num_images=16):
     """样本生成函数
@@ -61,6 +63,7 @@ def generate_samples(config, model_path, num_images=16):
     plt.axis('off')
     plt.savefig("generated_samples.png")
     plt.close()
+'''
 
 @torch.no_grad()
 def generate_during_training(model_engine, save_dir, config, num_images=16):
@@ -82,22 +85,32 @@ def generate_during_training(model_engine, save_dir, config, num_images=16):
     sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
     
     # 生成初始噪声
-    x = torch.randn(num_images, 3, config.image_size, config.image_size, device=device, dtype=torch.half)
-    x = x.to(next(model_engine.parameters()).dtype)
+    x1 = torch.randn(num_images, 3, config.image_size, config.image_size, device=device, dtype=torch.half)
+    x2 = torch.randn(num_images, 3, config.image_size, config.image_size, device=device, dtype=torch.half)
+    x1 = x1.to(next(model_engine.parameters()).dtype)
+    x2 = x2.to(next(model_engine.parameters()).dtype)
     
     # 反向扩散过程
     for t in reversed(range(0, config.timesteps)):
         t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
-        pred_noise = model_engine(x, t_batch)
+        
+        # 分别对两份数据进行去噪
+        pred_noise1 = model_engine.module[0](x1, t_batch)  # 使用第一个 UNet
+        pred_noise2 = model_engine.module[1](x2, t_batch)  # 使用第二个 UNet
         
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
         beta_t = betas[t]
         
-        noise = torch.randn_like(x) if t > 0 else 0
+        noise1 = torch.randn_like(x1) if t > 0 else 0
+        noise2 = torch.randn_like(x2) if t > 0 else 0
         
         # 更新公式
-        x = sqrt_one_over_alphas[t] * (x - beta_t * pred_noise / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise
+        x1 = sqrt_one_over_alphas[t] * (x1 - beta_t * pred_noise1 / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise1
+        x2 = sqrt_one_over_alphas[t] * (x2 - beta_t * pred_noise2 / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise2
+    
+    # 融合两个去噪结果（简单加权平均）
+    x = 0.5 * x1 + 0.5 * x2
     
     # 后处理并转换数据类型
     x = (x.clamp(-1, 1) + 1) * 0.5  # 将图像范围从 [-1, 1] 转换到 [0, 1]
@@ -131,22 +144,32 @@ def generate_during_training_simulation(model_engine, save_dir, config, num_imag
     sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
     
     # 生成初始噪声
-    x = torch.randn(num_images, 1, config.image_size, config.image_size, device=device, dtype=torch.half)
-    x = x.to(next(model_engine.parameters()).dtype)
+    x1 = torch.randn(num_images, 1, config.image_size, config.image_size, device=device, dtype=torch.half)  # 第一份噪声
+    x2 = torch.randn(num_images, 1, config.image_size, config.image_size, device=device, dtype=torch.half)  # 第二份噪声
+    x1 = x1.to(next(model_engine.parameters()).dtype)
+    x2 = x2.to(next(model_engine.parameters()).dtype)
     
     # 反向扩散过程
     for t in reversed(range(0, config.timesteps)):
         t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
-        pred_noise = model_engine(x, t_batch)
+        
+        # 分别对两份数据进行去噪
+        pred_noise1 = model_engine.module[0](x1, t_batch)  # 使用第一个 UNet
+        pred_noise2 = model_engine.module[1](x2, t_batch)  # 使用第二个 UNet
         
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
         beta_t = betas[t]
         
-        noise = torch.randn_like(x) if t > 0 else 0
+        noise1 = torch.randn_like(x1) if t > 0 else 0
+        noise2 = torch.randn_like(x2) if t > 0 else 0
         
         # 更新公式
-        x = sqrt_one_over_alphas[t] * (x - beta_t * pred_noise / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise
+        x1 = sqrt_one_over_alphas[t] * (x1 - beta_t * pred_noise1 / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise1
+        x2 = sqrt_one_over_alphas[t] * (x2 - beta_t * pred_noise2 / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise2
+    
+    # 融合两个去噪结果（简单加权平均）
+    x = 0.5 * x1 + 0.5 * x2
     
     # 后处理并转换数据类型
     # x = (x.clamp(-1, 1) + 1) * 0.5  # 将图像范围从 [-1, 1] 转换到 [0, 1]

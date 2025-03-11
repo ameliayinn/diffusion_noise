@@ -6,62 +6,13 @@ from torch.optim.lr_scheduler import MultiStepLR
 import torch.nn.functional as F
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
-from dataloader_simulation import load_data
+from utils.dataloader import load_data
 from diffusion import linear_beta_schedule, forward_diffusion
-from unet import UNetSimulation
+from unet import UNet
 import torchvision
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
-
-@torch.no_grad()
-def generate_during_training(model_engine, save_dir, config, num_images=16):
-    """在训练过程中生成样本并保存
-    Args:
-        model_engine: DeepSpeed 模型引擎
-        save_dir (str): 保存样本的目录
-        config: 配置对象
-        num_images (int): 生成的样本数量
-    """
-    model_engine.eval()
-    device = model_engine.device
-    
-    # 准备扩散参数
-    betas = linear_beta_schedule(config.timesteps).to(device)
-    alphas = 1. - betas
-    alphas_cumprod = torch.cumprod(alphas, dim=0)
-    sqrt_one_over_alphas = torch.sqrt(1.0 / alphas)
-    sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
-    
-    # 生成初始噪声
-    x = torch.randn(num_images, 3, config.image_size, config.image_size, device=device, dtype=torch.half)
-    x = x.to(next(model_engine.parameters()).dtype)
-    
-    # 反向扩散过程
-    for t in reversed(range(0, config.timesteps)):
-        t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
-        pred_noise = model_engine(x, t_batch)
-        
-        alpha_t = alphas[t]
-        alpha_cumprod_t = alphas_cumprod[t]
-        beta_t = betas[t]
-        
-        noise = torch.randn_like(x) if t > 0 else 0
-        
-        # 更新公式
-        x = sqrt_one_over_alphas[t] * (x - beta_t * pred_noise / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise
-    
-    # 后处理并转换数据类型
-    x = (x.clamp(-1, 1) + 1) * 0.5  # 将图像范围从 [-1, 1] 转换到 [0, 1]
-    x = x.to(torch.float32)  # 确保转换为 float32
-    grid = torchvision.utils.make_grid(x.cpu(), nrow=4)  # 将图像拼接成网格
-    
-    # 保存图像
-    plt.figure(figsize=(12, 12))
-    plt.imshow(grid.permute(1, 2, 0).numpy())  # 数据现在是 float32
-    plt.axis('off')
-    plt.savefig(os.path.join(save_dir, "samples.png"))
-    plt.close()
 
 def train_deepspeed(config):
     """DeepSpeed训练主函数"""
@@ -73,9 +24,17 @@ def train_deepspeed(config):
     config.checkpoints_dir = os.path.join(config.checkpoints_dir, f"checkpoints_{timestamp}")
     config.samples_dir = os.path.join(config.samples_dir, f"samples_{timestamp}")
     config.logs_dir = os.path.join(config.logs_dir, f"logs_{timestamp}")
+
+    os.makedirs(config.checkpoints_dir, exist_ok=True)
+    os.makedirs(config.samples_dir, exist_ok=True)
+    os.makedirs(config.logs_dir, exist_ok=True)
+    
+    # 构造 CSV 文件路径
+    csv_filename = f"is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}.csv"
+    csv_filepath = os.path.join(config.logs_dir, csv_filename)
     
     # 初始化模型
-    model = UNetSimulation(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
+    model = UNet(time_emb_dim=config.time_emb_dim, image_size=config.image_size)
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     
     # DeepSpeed配置 (移除scheduler部分)
@@ -105,8 +64,7 @@ def train_deepspeed(config):
     
     # 初始化引擎
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
-    train_dataset = load_data(config, local_rank, seed=42) # 使用固定种子
-    # train_dataset_random = load_data(config, local_rank=0, seed=None)  # 不使用固定种子
+    train_dataset = load_data(config, local_rank)
     
     # 初始化DeepSpeed引擎
     model_engine, optimizer, train_loader, _ = deepspeed.initialize(
@@ -122,7 +80,8 @@ def train_deepspeed(config):
     base_optimizer = optimizer.optimizer  # 访问底层PyTorch优化器
     scheduler = MultiStepLR(
         base_optimizer, 
-        milestones=[500, 1000, 1500],  # 在epoch=500、1000、1500时衰减
+        # milestones=[500, 1000, 1500],  # 在epoch=500、1000、1500时衰减
+        milestones=[300, 600, 900],
         gamma=0.1  # 每次衰减为之前的0.1倍
     )
     
@@ -135,15 +94,6 @@ def train_deepspeed(config):
     
     # 提示开始
     print(f"****START TRAINING****\nimage_size: {config.image_size}, batch_size: {config.batch_size}, timesteps: {config.timesteps}, time_emb_dim: {config.time_emb_dim}")
-    
-    # 创建带有时间戳的路径
-    os.makedirs(config.checkpoints_dir, exist_ok=True)
-    os.makedirs(config.samples_dir, exist_ok=True)
-    os.makedirs(config.logs_dir, exist_ok=True)
-    
-    # 构造 CSV 文件路径
-    csv_filename = f"is_{config.image_size}_bs_{config.batch_size}_tstep_{config.timesteps}_tdim_{config.time_emb_dim}.csv"
-    csv_filepath = os.path.join(config.logs_dir, csv_filename)
     
     # 创建 CSV 文件并写入表头
     if model_engine.local_rank == 0:  # 只在主进程创建
@@ -184,7 +134,7 @@ def train_deepspeed(config):
         
         # 保存检查点
         if model_engine.local_rank == 0:
-            print(f"Current lr: {scheduler.get_last_lr()[0]:.8f}")  # 验证学习率变化
+            # print(f"Current lr: {scheduler.get_last_lr()[0]:.8f}")  # 验证学习率变化
             
             # 记录 epoch 结果到 CSV
             new_row = {
