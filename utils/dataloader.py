@@ -62,8 +62,8 @@ def load_data_simulation(config, local_rank, seed=42):
     image_size = config.image_size
     # dim = 3 * image_size * image_size  # 确保维度可以被 reshape 为图像格式
     dim = image_size * image_size
-    num_samples_1 = config.num1  # 数据集的样本数量
-    num_samples_2 = config.num2
+    num_samples_1 = config.num1 // image_size # 数据集的样本数量
+    num_samples_2 = config.num2 // image_size
 
     # 第一个数据集的均值和协方差矩阵
     mu1 = torch.ones(dim) * config.mu1  # 均值

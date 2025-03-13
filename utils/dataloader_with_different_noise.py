@@ -88,17 +88,25 @@ def load_data_simulation(config, local_rank, seed=42):
     # 将数据 reshape 为通道数为1的格式
     data1_reshaped = data1_reshaped.view(-1, 1, image_size, image_size)
     data2_reshaped = data2_reshaped.view(-1, 1, image_size, image_size)
+    
+    labels1 = torch.zeros(num_samples_1)
+    labels2 = torch.ones(num_samples_2)
 
     # 创建 Hugging Face Dataset
-    dataset = Dataset.from_dict({
-        "image1": data1_reshaped,  # 第一份数据
-        "image2": data2_reshaped,  # 第二份数据
-        "label": torch.cat([torch.zeros(num_samples_1), torch.ones(num_samples_2)]).tolist()  # 标签
+    dataset1 = Dataset.from_dict({
+        "image": data1_reshaped,  # 将数据转换为列表形式
+        "label": labels1.tolist()  # 将标签转换为列表形式
+    })
+    dataset2 = Dataset.from_dict({
+        "image": data2_reshaped,  # 将数据转换为列表形式
+        "label": labels2.tolist()  # 将标签转换为列表形式
     })
 
     # 划分训练集和测试集
-    dataset = dataset.train_test_split(test_size=0.1)
-    dataset.set_format(type='torch', columns=['image1', 'image2', 'label'])
+    dataset1 = dataset1.train_test_split(test_size=0.1)
+    dataset1.set_format(type='torch', columns=['image', 'label'])
+    dataset2 = dataset2.train_test_split(test_size=0.1)
+    dataset2.set_format(type='torch', columns=['image', 'label'])
     
     # 返回训练集部分
-    return dataset["train"]
+    return dataset1["train"], dataset2["train"]

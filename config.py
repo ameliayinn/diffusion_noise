@@ -40,7 +40,7 @@ def get_config():
     parser.add_argument("--local_rank", type=int, default=-1, help="Local rank passed from deepspeed")
     
     # use different noise
-    parser.add_argument("--use_different_noise", type=bool, default=False, help="Use different noise for diffusion or not")
+    parser.add_argument("--use_different_noise", action="store_true", default=False, help="Use different noise for diffusion or not")
     
     # parser.set_defaults(fp16=True)
     return parser.parse_args()

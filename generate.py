@@ -152,25 +152,35 @@ def generate_during_training_simulation(model_engine, save_dir, config, num_imag
     # x = (x.clamp(-1, 1) + 1) * 0.5  # 将图像范围从 [-1, 1] 转换到 [0, 1]
     x = x.to(torch.float32)  # 确保转换为 float32
     
-    with open(os.path.join(save_dir, "sample.txt"), "w") as f:
+    with open(os.path.join(save_dir, "samples.txt"), "w") as f:
         res_list = []
         for i in range(num_images):
             sample = x[i].cpu().numpy()
             mean_list = []
             for row in sample:
-                # print("*****" ,type(row), row.shape) # <class 'numpy.ndarray'> (16, 16)
+                # print("*****" ,type(row), row.shape) # <class 'numpy.ndarray'> (8, 8)
                 # f.write(" ".join(f"{float(val):.7f}" for val in row.reshape(-1))) # flaten row to one dimension
+                '''
                 mean_row = np.mean(row)
                 mean_list.append(mean_row)
+                '''
+                
+                flattened_row = row.flatten().tolist()
+                for item in flattened_row:
+                    res_list.append(item)
+                
+            '''
             mean_res = np.mean(mean_list)
             res_list.append(mean_res)
+            '''
         f.write(str(res_list))
     
     # 确定横坐标范围
     min_value = min(res_list)
     max_value = max(res_list)
+    l = len(res_list)
     with open(os.path.join(save_dir, "range.txt"), "w") as f:
-        content = 'min: ' + str(min_value) + ', max: ' + str(max_value)
+        content = 'min: ' + str(min_value) + ', max: ' + str(max_value) + ', len: ' + str(l)
         f.write(content)
     bins = np.arange(min_value, max_value + 1, 1)  # 左闭右开区间
     

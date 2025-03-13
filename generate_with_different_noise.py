@@ -7,7 +7,6 @@ from diffusion import linear_beta_schedule
 import os
 import numpy as np
 
-'''
 # 还未更改
 @torch.no_grad()
 def generate_samples(config, model_path, num_images=16):
@@ -63,7 +62,6 @@ def generate_samples(config, model_path, num_images=16):
     plt.axis('off')
     plt.savefig("generated_samples.png")
     plt.close()
-'''
 
 @torch.no_grad()
 def generate_during_training(model_engine, save_dir, config, num_images=16):
