@@ -4,7 +4,7 @@ master_port=29500
 deepspeed --num_gpus $num_gpus --master_port $master_port main.py \
     --image_size 8 \
     --batch_size 256 \
-    --num_epochs 1000 \
+    --num_epochs 200 \
     --timesteps 1000 \
     --lr 2e-4 \
     --time_emb_dim 256 \
@@ -19,6 +19,6 @@ deepspeed --num_gpus $num_gpus --master_port $master_port main.py \
     --fp16 \
     --mode "train" \
     --model_path "" \
-    --num_images 10000 \
+    --num_images 80000 \
     --dataset_name "simulation"\
     --use_different_noise \

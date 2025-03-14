@@ -93,8 +93,8 @@ def generate_during_training(model_engine, save_dir, config, num_images=16):
         t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
         
         # 分别对两份数据进行去噪
-        pred_noise1 = model_engine.module[0](x1, t_batch)  # 使用第一个 UNet
-        pred_noise2 = model_engine.module[1](x2, t_batch)  # 使用第二个 UNet
+        pred_noise1 = model_engine.module.model1(x1, t_batch)  # 使用第一个 UNet
+        pred_noise2 = model_engine.module.model2(x2, t_batch)  # 使用第二个 UNet
         
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
@@ -152,8 +152,8 @@ def generate_during_training_simulation(model_engine, save_dir, config, num_imag
         t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
         
         # 分别对两份数据进行去噪
-        pred_noise1 = model_engine.module[0](x1, t_batch)  # 使用第一个 UNet
-        pred_noise2 = model_engine.module[1](x2, t_batch)  # 使用第二个 UNet
+        pred_noise1 = model_engine.module.model1(x1, t_batch)  # 使用第一个 UNet
+        pred_noise2 = model_engine.module.model2(x2, t_batch)  # 使用第二个 UNet
         
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
@@ -181,10 +181,19 @@ def generate_during_training_simulation(model_engine, save_dir, config, num_imag
             for row in sample:
                 # print("*****" ,type(row), row.shape) # <class 'numpy.ndarray'> (16, 16)
                 # f.write(" ".join(f"{float(val):.7f}" for val in row.reshape(-1))) # flaten row to one dimension
+                
                 mean_row = np.mean(row)
                 mean_list.append(mean_row)
+                
+                '''
+                flattened_row = row.flatten().tolist()
+                for item in flattened_row:
+                    res_list.append(item)
+                '''
+            
             mean_res = np.mean(mean_list)
             res_list.append(mean_res)
+            
         f.write(str(res_list))
     
     # 确定横坐标范围

@@ -12,9 +12,10 @@ torch.manual_seed(seed)
 # 定义高维正态分布的参数
 image_size = 8
 # dim = 3 * image_size * image_size  # 确保维度可以被 reshape 为图像格式
-dim = image_size * image_size
-num_samples_1 = 9000 // 8 # 数据集的样本数量
-num_samples_2 = 1000 // 8
+# dim = image_size * image_size
+dim = image_size
+num_samples_1 = 9900 # 数据集的样本数量
+num_samples_2 = 100
 
 # 第一个数据集的均值和协方差矩阵
 mu1 = torch.ones(dim) * 4  # 均值
@@ -33,8 +34,8 @@ data2 = torch.distributions.MultivariateNormal(mu2, sigma2).sample((num_samples_
 # data2_reshaped = data2.view(num_samples_2, image_size, image_size)
 
 # 如果你想保持原始数据的连续性，可以使用 reshape 方法
-data1_reshaped = data1.reshape(num_samples_1, image_size, image_size)
-data2_reshaped = data2.reshape(num_samples_2, image_size, image_size)
+# data1_reshaped = data1.reshape(num_samples_1, image_size, image_size)
+# data2_reshaped = data2.reshape(num_samples_2, image_size, image_size)
 
 
 # 将两个数据集合并
@@ -64,6 +65,6 @@ for item in data:
 '''
 
 # 将一维列表写入到 txt 文件中
-with open("tools/simulation_data.txt", "w") as f:
+with open("tools/simulation_data_099.txt", "w") as f:
     f.write(str(flattened_data))
     # f.write(str(res_list))
