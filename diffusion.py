@@ -27,7 +27,41 @@ def forward_diffusion(x0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod)
     sqrt_one_minus_alpha_cumprod_t = sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
     return sqrt_alpha_cumprod_t * x0 + sqrt_one_minus_alpha_cumprod_t * noise, noise
 
-def forward_diffusion_with_different_noise(x0_1, x0_2, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod):
+def forward_diffusion_with_different_noise(x0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.9):
+    """前向扩散过程（闭式解）
+    Args:
+        x0 (Tensor): 原始图像 [B,C,H,W]
+        t (Tensor): 时间步 [B]
+        sqrt_alphas_cumprod (Tensor): 累积乘积的平方根 [T]
+        sqrt_one_minus_alphas_cumprod (Tensor): 1减去累积乘积的平方根 [T]
+        mu1 (float): 第一个正态分布的均值
+        mu2 (float): 第二个正态分布的均值
+        sigma1 (float): 第一个正态分布的标准差
+        sigma2 (float): 第二个正态分布的标准差
+        p (float): 从第一个分布采样的概率
+    Returns:
+        noisy_images (Tensor): 加噪图像 [B,C,H,W]
+        noise (Tensor): 添加的噪声 [B,C,H,W]
+    """
+    # 生成一个随机数来决定从哪个分布采样
+    mask = torch.rand(x0.size(0), 1, 1, 1, device=x0.device) < p
+    
+    # 从两个正态分布中采样噪声
+    noise1 = torch.randn_like(x0) * sigma1 + mu1
+    noise2 = torch.randn_like(x0) * sigma2 + mu2
+    
+    # 根据 mask 选择噪声
+    noise = torch.where(mask, noise1, noise2)
+    
+    # 计算加噪图像
+    sqrt_alpha_cumprod_t = sqrt_alphas_cumprod[t].view(-1, 1, 1, 1)
+    sqrt_one_minus_alpha_cumprod_t = sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+    
+    noisy_images = sqrt_alpha_cumprod_t * x0 + sqrt_one_minus_alpha_cumprod_t * noise
+    
+    return noisy_images, noise
+
+def forward_diffusion_with_different_noise_1(x0_1, x0_2, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod):
     """
     对两份数据分别进行加噪
     Args:

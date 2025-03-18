@@ -14,8 +14,8 @@ image_size = 8
 # dim = 3 * image_size * image_size  # 确保维度可以被 reshape 为图像格式
 # dim = image_size * image_size
 dim = image_size
-num_samples_1 = 9900 # 数据集的样本数量
-num_samples_2 = 100
+num_samples_1 = 6000 # 数据集的样本数量
+num_samples_2 = 4000
 
 # 第一个数据集的均值和协方差矩阵
 mu1 = torch.ones(dim) * 4  # 均值
@@ -65,6 +65,6 @@ for item in data:
 '''
 
 # 将一维列表写入到 txt 文件中
-with open("tools/simulation_data_099.txt", "w") as f:
+with open("tools/simulation_data_060.txt", "w") as f:
     f.write(str(flattened_data))
     # f.write(str(res_list))

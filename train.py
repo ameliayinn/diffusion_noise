@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from diffusion import linear_beta_schedule, forward_diffusion
+from diffusion import linear_beta_schedule
 from unet import UNetSimulation
 import torchvision
 import matplotlib.pyplot as plt
@@ -19,14 +19,18 @@ from collections import Counter
 
 def train_deepspeed(config):
     """函数引用"""
-    def get_function(type):
+    def get_function(type, use_different_noise):
         if type == 'simulation':
             from utils.dataloader import load_data_simulation as load_data
             from generate import generate_during_training_simulation as generate_during_training
         else:
             from utils.dataloader import load_data
             from generate import generate_during_training
-        return load_data, generate_during_training
+        if use_different_noise:
+            from diffusion import forward_diffusion_with_different_noise as forward_diffusion
+        else:
+            from diffusion import forward_diffusion
+        return load_data, generate_during_training, forward_diffusion
     
     """DeepSpeed训练主函数"""
     
@@ -68,8 +72,8 @@ def train_deepspeed(config):
     }
     
     # get fuction
-    data_type = config.dataset_name
-    load_data, generate_during_training = get_function(data_type)
+    data_type, use_different_noise = config.dataset_name, config.use_different_noise
+    load_data, generate_during_training, forward_diffusion = get_function(data_type, use_different_noise)
     
     # 初始化引擎
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
