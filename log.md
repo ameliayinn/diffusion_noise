@@ -5,7 +5,8 @@ samples/samples_2025_03_11_03_21 2_2_5_4_090 mean
 samples/samples_2025_03_12_20_27 4_1_10_4_090 flatten
 samples/samples_2025_03_12_20_35 2_2_5_4_090 flatten
 samples/samples_2025_03_14_16_03 4_1_10_4_090 mean different_noise
-samples/samples_2025_03_17_17_25 4_1_10_4_090 flatten different_noise
+
+samples/samples_2025_03_17_17_25 4_1_10_4_090 flatten different_noise mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.9
 samples/samples_2025_03_17_18_05 2_2_5_4_090 flatten different_noise
 samples/samples_2025_03_17_18_20 4_1_10_4_060 flatten different_noise
 samples/samples_2025_03_17_18_35 2_2_5_4_060 flatten different_noise
