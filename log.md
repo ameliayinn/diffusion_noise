@@ -37,3 +37,8 @@ samples/samples_2025_03_19_10_03 1_10_050 different_noise(mu1=-0.3, mu2=0.5, sig
 samples/samples_2025_03_19_14_53 1_10_080 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
 samples/samples_2025_03_19_10_51 1_5_050 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
 samples/samples_2025_03_19_11_06 1_5_080 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
+
+--flatten--poisson--
+experiments/dif_noise_5
+samples/samples_2025_03_19_18_21 2_2_5_4_060 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.9)
+samples/samples_2025_03_19_19_19 4_1_10_4_090 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.9)

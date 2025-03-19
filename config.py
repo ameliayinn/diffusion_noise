@@ -29,7 +29,7 @@ def get_config():
     parser.add_argument("--time_emb_dim", type=int, default=128, help="Dimension of time embeddings")
     
     # simulation data
-    parser.add_argument("--simulation_distribution", type=str, default="normal", help="Distribution of the simulation data")
+    parser.add_argument("--simulation_distribution", type=str, default="data", help="Distribution of the simulation data")
     parser.add_argument("--num1", type=int, default=2, help="Number of data of the first normal distribution")
     parser.add_argument("--num2", type=int, default=2, help="Number of data of the second normal distribution")
     

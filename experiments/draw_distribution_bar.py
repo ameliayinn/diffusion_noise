@@ -14,10 +14,10 @@ def read_data(file_path):
     return data
 
 # 文件路径
-# file1 = 'experiments/dif_noise_2/2_2_5_4_090_dif.txt'
-# file2 = 'tools/normal_data_2_2_5_4_090.txt'
-file1 = 'experiments/dif_noise_4/1_10_080_dif.txt'
-file2 = 'tools/poisson_data_1_10_080.txt'
+file1 = 'experiments/dif_noise_5/4_1_10_4_090_dif.txt'
+file2 = 'tools/normal_data_4_1_10_4_090.txt'
+# file1 = 'experiments/dif_noise_4/1_10_080_dif.txt'
+# file2 = 'tools/poisson_data_1_10_080.txt'
 
 # 读取数据
 data1 = read_data(file1)
@@ -33,7 +33,7 @@ plt.hist(data1, bins=bins, alpha=alpha, color='green', label=f'output (total {le
 plt.hist(data2, bins=bins, alpha=alpha, color='red', label=f'input (total {len(data2)})', density=True)
 
 # 限定横坐标范围
-plt.xlim(-5, 25)  # 设置 x 轴范围为 -10 到 20
+# plt.xlim(-5, 25)  # 设置 x 轴范围为 -10 到 20
 
 # 添加标题和标签
 plt.title(f"{file1[24:-4]}")
