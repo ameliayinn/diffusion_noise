@@ -21,7 +21,7 @@ def train_deepspeed(config):
     """函数引用"""
     def get_function(type):
         if type == 'simulation':
-            from utils.dataloader import load_data_simulation as load_data
+            from utils.dataloader import load_data_normal as load_data
             from generate import generate_during_training_simulation as generate_during_training
         else:
             from utils.dataloader import load_data

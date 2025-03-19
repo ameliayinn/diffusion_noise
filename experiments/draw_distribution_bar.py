@@ -14,10 +14,10 @@ def read_data(file_path):
     return data
 
 # 文件路径
-# file1 = 'resources/4_1_10_4_099.txt'
-# file1 = 'resources/2_2_5_4_099.txt'
-file1 = 'resources/2_2_5_4_060_dif.txt'
-file2 = 'tools/simulation_data_060.txt'
+# file1 = 'experiments/dif_noise_2/2_2_5_4_090_dif.txt'
+# file2 = 'tools/normal_data_2_2_5_4_090.txt'
+file1 = 'experiments/dif_noise_4/1_10_080_dif.txt'
+file2 = 'tools/poisson_data_1_10_080.txt'
 
 # 读取数据
 data1 = read_data(file1)
@@ -33,10 +33,10 @@ plt.hist(data1, bins=bins, alpha=alpha, color='green', label=f'output (total {le
 plt.hist(data2, bins=bins, alpha=alpha, color='red', label=f'input (total {len(data2)})', density=True)
 
 # 限定横坐标范围
-# plt.xlim(-50, 50)  # 设置 x 轴范围为 -10 到 20
+plt.xlim(-5, 25)  # 设置 x 轴范围为 -10 到 20
 
 # 添加标题和标签
-plt.title(f"{file1[10:-4]}")
+plt.title(f"{file1[24:-4]}")
 # plt.title("4_1_10_4_090")
 plt.xlabel('Value')
 plt.ylabel('Density')
@@ -44,6 +44,4 @@ plt.ylabel('Density')
 # 添加图例
 plt.legend()
 plt.savefig(f"{file1[:-4]}_density.png")
-# plt.savefig("density_1.png")
-# plt.savefig("density1.png")
 print(f"图片已保存")

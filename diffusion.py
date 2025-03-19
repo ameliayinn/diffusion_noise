@@ -27,7 +27,7 @@ def forward_diffusion(x0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod)
     sqrt_one_minus_alpha_cumprod_t = sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
     return sqrt_alpha_cumprod_t * x0 + sqrt_one_minus_alpha_cumprod_t * noise, noise
 
-def forward_diffusion_with_different_noise(x0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.9):
+def forward_diffusion_with_different_noise(x0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5):
     """前向扩散过程（闭式解）
     Args:
         x0 (Tensor): 原始图像 [B,C,H,W]

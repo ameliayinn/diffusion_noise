@@ -20,8 +20,11 @@ from collections import Counter
 def train_deepspeed(config):
     """函数引用"""
     def get_function(type, use_different_noise):
-        if type == 'simulation':
-            from utils.dataloader import load_data_simulation as load_data
+        if type == 'normal':
+            from utils.dataloader import load_data_normal as load_data
+            from generate import generate_during_training_simulation as generate_during_training
+        elif type == 'poisson':
+            from utils.dataloader import load_data_poisson as load_data
             from generate import generate_during_training_simulation as generate_during_training
         else:
             from utils.dataloader import load_data
@@ -72,8 +75,8 @@ def train_deepspeed(config):
     }
     
     # get fuction
-    data_type, use_different_noise = config.dataset_name, config.use_different_noise
-    load_data, generate_during_training, forward_diffusion = get_function(data_type, use_different_noise)
+    simulation_distribution, use_different_noise = config.simulation_distribution, config.use_different_noise
+    load_data, generate_during_training, forward_diffusion = get_function(simulation_distribution, use_different_noise)
     
     # 初始化引擎
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
@@ -139,12 +142,15 @@ def train_deepspeed(config):
             # print(type(images))  # 应该是 <class 'torch.Tensor'>
             # print(images.shape)  # 应该是 [B, 1, H, W]
             t = torch.randint(0, config.timesteps, (images.size(0),)).to(model_engine.device)
+            p = config.num1 / (config.num1 + config.num2)
+            # print('----****p****----', p)
             
             # 前向扩散
             noisy_images, noise = forward_diffusion(
                 images, t,
                 sqrt_alphas_cumprod,
-                sqrt_one_minus_alphas_cumprod
+                sqrt_one_minus_alphas_cumprod,
+                # p=p
             )
             
             # 预测噪声

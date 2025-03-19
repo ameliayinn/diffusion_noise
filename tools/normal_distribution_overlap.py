@@ -4,8 +4,8 @@ from scipy.stats import norm
 import json
 
 # 设置参数
-mu1, sigma1 = 4, 1
-mu2, sigma2 = 10, 4
+mu1, sigma1 = -0.3, 0.95
+mu2, sigma2 = 0.5, 0.95
 
 # 计算重叠面积
 x = np.linspace(-5, 5, 1000)
