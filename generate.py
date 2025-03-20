@@ -201,7 +201,7 @@ def generate_during_training_simulation(model_engine, save_dir, config, num_imag
     plt.ylabel("Frequency")
     plt.savefig(os.path.join(save_dir, "samples.png"))
 
-def generate_during_training_simulation_dif(model_engine, save_dir, config, num_images=16, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5):
+def generate_during_training_simulation_dif(model_engine, save_dir, config, epoch, num_images=16, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5):
     """在训练过程中生成样本并保存
     Args:
         model_engine: DeepSpeed 模型引擎
@@ -219,8 +219,12 @@ def generate_during_training_simulation_dif(model_engine, save_dir, config, num_
     sqrt_one_over_alphas = torch.sqrt(1.0 / alphas)
     sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
     
-    # 生成初始噪声
-    x = torch.randn(num_images, 1, config.image_size, config.image_size, device=device, dtype=torch.half)
+    """ 采样来自混合高斯分布的噪声 """
+    b = torch.bernoulli(torch.full((num_images, 1, 1, 1), p, device=device))  # 选择哪个高斯分布
+    noise1 = torch.randn(num_images, 1, config.image_size, config.image_size, device=device, dtype=torch.half) * sigma1 + mu1
+    noise2 = torch.randn(num_images, 1, config.image_size, config.image_size, device=device, dtype=torch.half) * sigma2 + mu2
+    x = b * noise1 + (1 - b) * noise2
+    
     x = x.to(next(model_engine.parameters()).dtype)
     
     # 反向扩散过程
@@ -231,25 +235,24 @@ def generate_during_training_simulation_dif(model_engine, save_dir, config, num_
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
         beta_t = betas[t]
-
-        # 生成 mask 来决定使用哪个噪声分布
-        # mask = torch.rand(x.size(0), 1, 1, 1, device=device) < p
-        mask = torch.rand(num_images, 1, 1, 1, device=device) < p
-        noise1 = torch.randn_like(x) * sigma1 + mu1
-        noise2 = torch.randn_like(x) * sigma2 + mu2
-        noise = torch.where(mask, noise1, noise2) if t > 0 else 0  # 只在 t > 0 时加噪
+        
+        # noise = torch.randn_like(x) if t > 0 else 0
+        noise = torch.randn_like(x) if t > 1 else torch.zeros_like(x)
         
         # 更新公式
-        x = sqrt_one_over_alphas[t] * (x - beta_t * pred_noise / sqrt_one_minus_alphas_cumprod[t])
-        if t > 0:
-            x = x + torch.sqrt(beta_t) * noise  # 只有 t > 0 时加噪
+        x = sqrt_one_over_alphas[t] * (x - beta_t * pred_noise / sqrt_one_minus_alphas_cumprod[t]) + torch.sqrt(beta_t) * noise
+        
+        del pred_noise
+        torch.cuda.empty_cache()
 
     x = x.to(torch.float32)  # 最终转换为 float32 以便保存和处理
+    # print("----****x2 in epoch ", epoch, "****----", x)
     
     with open(os.path.join(save_dir, "samples.txt"), "w") as f:
         res_list = []
         for i in range(num_images):
-            sample = x[i].cpu().numpy()
+            # sample = x[i].cpu().numpy()
+            sample = x[i].cpu().detach().numpy()
             for row in sample:
                 flattened_row = row.flatten().tolist()
                 for item in flattened_row:
@@ -278,7 +281,7 @@ def generate_during_training_simulation_dif(model_engine, save_dir, config, num_
     plt.savefig(os.path.join(save_dir, "samples.png"))
 
 @torch.no_grad()
-def generate_during_training_simulation_dif_1(model_engine, save_dir, config, num_images=16, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5):
+def generate_during_training_simulation_dif_1(model_engine, save_dir, config, epoch, num_images=16, mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5):
     """在训练过程中生成样本并保存
     Args:
         model_engine: DeepSpeed 模型引擎
@@ -313,6 +316,7 @@ def generate_during_training_simulation_dif_1(model_engine, save_dir, config, nu
     
     # 根据 mask 选择噪声
     x = torch.where(mask, x1, x2)
+    # print("----****x1 in epoch ", epoch, "****----", x)
     
     '''
     # 生成初始噪声
@@ -325,6 +329,7 @@ def generate_during_training_simulation_dif_1(model_engine, save_dir, config, nu
     for t in reversed(range(0, config.timesteps)):
         t_batch = torch.full((num_images,), t, device=device, dtype=torch.long)
         pred_noise = model_engine(x, t_batch)
+        print("----****pred_noise in epoch ", epoch, "****----", pred_noise)
         
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
@@ -349,6 +354,7 @@ def generate_during_training_simulation_dif_1(model_engine, save_dir, config, nu
         x = sqrt_one_over_alphas[t] * (x - beta_t * pred_noise / sqrt_one_minus_alphas_cumprod[t])
         if t > 0:
             x = x + torch.sqrt(beta_t) * noise  # 只有 t > 0 时加噪
+    print("----****x2 in epoch ", epoch, "****----", x)
     
     '''
     # 反向扩散过程

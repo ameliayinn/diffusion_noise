@@ -25,7 +25,7 @@ def train_deepspeed(config):
             from generate import generate_during_training
         else:
             if use_different_noise:
-                from generate import generate_during_training_simulation_dif_1 as generate_during_training
+                from generate import generate_during_training_simulation_dif as generate_during_training
             else:
                 from generate import generate_during_training_simulation as generate_during_training
             if type == 'normal':
@@ -146,7 +146,7 @@ def train_deepspeed(config):
             # print(images.shape)  # 应该是 [B, 1, H, W]
             t = torch.randint(0, config.timesteps, (images.size(0),)).to(model_engine.device)
             # p = config.num1 / (config.num1 + config.num2)
-            p = 0.9
+            p = 0.5
             # print('----****p****----', p)
             
             # 前向扩散
@@ -205,7 +205,7 @@ def train_deepspeed(config):
                 )
                 os.makedirs(sample_dir, exist_ok=True)
                 
-                generate_during_training(model_engine, sample_dir, config, num_images=config.num_images//config.image_size, p=p)
+                generate_during_training(model_engine, sample_dir, config, epoch, num_images=config.num_images//config.image_size, p=p)
                 # generate_during_training(model_engine, sample_dir, config, num_images=config.num_images)
             
             # print(f"Epoch {epoch+1} | Loss: {loss.item():.4f} | Samples saved to {sample_dir}")

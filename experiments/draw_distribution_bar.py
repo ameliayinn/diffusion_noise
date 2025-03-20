@@ -14,8 +14,8 @@ def read_data(file_path):
     return data
 
 # 文件路径
-file1 = 'experiments/dif_noise_5/4_1_10_4_090_dif.txt'
-file2 = 'tools/normal_data_4_1_10_4_090.txt'
+file1 = 'experiments/dif_noise_1/2_2_5_4_099_dif.txt'
+file2 = 'tools/normal_data_2_2_5_4_099.txt'
 # file1 = 'experiments/dif_noise_4/1_10_080_dif.txt'
 # file2 = 'tools/poisson_data_1_10_080.txt'
 
@@ -25,7 +25,7 @@ data2 = read_data(file2)
 print(len(data1), len(data2))
 
 # 设置柱状图的参数
-bins = 250  # 柱状图的柱子数量
+bins = 500  # 柱状图的柱子数量
 alpha = 0.4  # 透明度
 
 # 绘制柱状图
@@ -33,7 +33,7 @@ plt.hist(data1, bins=bins, alpha=alpha, color='green', label=f'output (total {le
 plt.hist(data2, bins=bins, alpha=alpha, color='red', label=f'input (total {len(data2)})', density=True)
 
 # 限定横坐标范围
-# plt.xlim(-5, 25)  # 设置 x 轴范围为 -10 到 20
+plt.xlim(-50, 100)  # 设置 x 轴范围为 -10 到 20
 
 # 添加标题和标签
 plt.title(f"{file1[24:-4]}")
