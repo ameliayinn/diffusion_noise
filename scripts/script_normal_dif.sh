@@ -19,7 +19,7 @@ deepspeed --num_gpus $num_gpus --master_port $master_port main.py \
     --fp16 \
     --mode "train" \
     --model_path "" \
-    --num_images 80000 \
+    --num_images 10000 \
     --simulation_distribution "normal"\
     --use_different_noise \
 
@@ -41,7 +41,7 @@ deepspeed --num_gpus $num_gpus --master_port $master_port main.py \
     --fp16 \
     --mode "train" \
     --model_path "" \
-    --num_images 80000 \
+    --num_images 10000 \
     --simulation_distribution "normal"\
     --use_different_noise \
 
@@ -63,7 +63,7 @@ deepspeed --num_gpus $num_gpus --master_port $master_port main.py \
     --fp16 \
     --mode "train" \
     --model_path "" \
-    --num_images 80000 \
+    --num_images 10000 \
     --simulation_distribution "normal"\
     --use_different_noise \
 
@@ -85,6 +85,6 @@ deepspeed --num_gpus $num_gpus --master_port $master_port main.py \
     --fp16 \
     --mode "train" \
     --model_path "" \
-    --num_images 80000 \
+    --num_images 10000 \
     --simulation_distribution "normal"\
     --use_different_noise \

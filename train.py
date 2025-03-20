@@ -145,8 +145,8 @@ def train_deepspeed(config):
             # print(type(images))  # 应该是 <class 'torch.Tensor'>
             # print(images.shape)  # 应该是 [B, 1, H, W]
             t = torch.randint(0, config.timesteps, (images.size(0),)).to(model_engine.device)
-            # p = config.num1 / (config.num1 + config.num2)
-            p = 0.5
+            p = config.num1 / (config.num1 + config.num2)
+            # p = 0.5
             # print('----****p****----', p)
             
             # 前向扩散
