@@ -50,8 +50,8 @@ samples/samples_2025_03_20_18_45 2_2_5_4_099 different_noise(mu1=-0.3, mu2=0.5, 
 --flatten--normal--
 experiments/dif_noise_6
 samples/samples_2025_03_20_19_05 4_1_10_4_090 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
- 2_2_5_4_090 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
- 4_1_10_4_060 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
- 2_2_5_4_060 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
- 4_1_10_4_099 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
+samples/samples_2025_03_20_19_21 2_2_5_4_090 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
+samples/samples_2025_03_20_19_37 4_1_10_4_060 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
+samples/samples_2025_03_20_19_53 2_2_5_4_060 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
+samples/samples_2025_03_20_20_08 4_1_10_4_099 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
  2_2_5_4_099 different_noise(mu1=-0.3, mu2=0.5, sigma1=0.95, sigma2=0.95, p=0.5)
