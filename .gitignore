@@ -1,5 +1,9 @@
 __pycache__/
 checkpoints*/
-samples*/
+# samples*/
+samples/samples_2025_03_14_*
+samples/samples_2025_03_12_*
+samples/samples_2025_03_11_*
+samples/samples_2025_03_0*
 # logs*/
 *.log
